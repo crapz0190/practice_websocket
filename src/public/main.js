@@ -13,5 +13,13 @@ noteForm.addEventListener("submit", (e) => {
   // preventDefault cancela el comportamiento por defecto de reinciar la pagina
   e.preventDefault();
 
-  saveNote(title.value, description.value);
+  if (saveId) {
+    updateNote(saveId, title.value, description.value);
+  } else {
+    saveNote(title.value, description.value);
+  }
+
+  title.value = "";
+  description.value = "";
+  title.focus();
 });

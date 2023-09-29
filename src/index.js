@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { Server as WebSocketServer } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 
-const notes = [];
+let notes = [];
 
 // express nos devuelve un objeto aplication no un objeto http, y websocket necesita el modulo http
 const app = express();
@@ -23,19 +23,39 @@ app.use(express.static(join(__dirname, "/public")));
 io.on("connection", (socketServer) => {
   console.log(`New client connected ${socketServer.id}`);
 
+  socketServer.emit("loadnotes", notes);
+
   socketServer.on("newnote", (newNote) => {
     const note = { id: uuidv4(), ...newNote };
     console.log(note);
     notes.push(note);
 
-    socketServer.emit("newnote", note);
+    io.emit("newnote", note);
   });
 
-  // socket.emit("ping", "estoy conectado");
+  socketServer.on("deletenote", (noteId) => {
+    notes = notes.filter((note) => note.id !== noteId);
 
-  // socket.on("pong", (data) => {
-  //   console.log(data);
-  // });
+    io.emit("loadnotes", notes);
+  });
+
+  socketServer.on("getnote", (noteId) => {
+    const note = notes.find((note) => note.id === noteId);
+    socketServer.emit("selectednote", note);
+  });
+
+  socketServer.on("updatenote", (updateNote) => {
+    notes = notes.map((note) => {
+      if (note.id === updateNote.id) {
+        note.title = updateNote.title;
+        note.description = updateNote.description;
+      }
+
+      return note;
+    });
+
+    io.emit("loadnotes", notes);
+  });
 });
 
 server.listen(PORT, () => {
